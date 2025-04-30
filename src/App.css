@@ -240,14 +240,32 @@ body {
   font-weight: 500;
 }
 
-/* PDF Canvas */
-.pdf-canvas {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
+/* PDF Viewer Styles */
+.pdf-viewer-container {
+  height: 100%; /* Fill the parent main-content area */
+  overflow-y: auto; /* Enable vertical scrolling */
+  background-color: #f8f8f8; /* Light background behind pages */
+  padding: 15px 0; /* Add some vertical padding */
+  box-sizing: border-box;
+  display: flex; /* Use flex to center Document */
+  flex-direction: column;
+  align-items: center; /* Center pages horizontally */
+  width: 100%; /* Take full width of the container */
+}
+
+/* Styles applied by react-pdf to the Page component */
+.react-pdf__Page {
+  margin-bottom: 15px; /* Space between pages */
+  display: flex; /* Overwrite default display if needed */
+  justify-content: center; /* Center canvas within Page */
+}
+
+.react-pdf__Page__canvas {
+  /* Style the canvas showing the page */
+  max-width: 100%; /* Ensure canvas is responsive */
+  height: auto !important; /* Important for responsiveness */
   border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
 }
 
 /* Right sidebar */
