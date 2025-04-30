@@ -240,6 +240,16 @@ body {
   font-weight: 500;
 }
 
+/* PDF Canvas */
+.pdf-canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* Right sidebar */
 .right-sidebar {
   width: 250px;
