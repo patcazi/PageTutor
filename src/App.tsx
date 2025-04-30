@@ -1,7 +1,15 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
 import './App.css'
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
+
 const App: React.FC = () => {
+  const [file, setFile] = useState<File | null>(null); // State for the selected file
+  const [numPages, setNumPages] = useState<number | null>(null); // State for total pages
+  const [currentPage, setCurrentPage] = useState<number>(1); // State for current page
+  const canvasRef = useRef<HTMLCanvasElement>(null); // Ref for the canvas element we will add later
+
   return (
     <div className="app-container">
       {/* Left Sidebar */}
