@@ -13,6 +13,8 @@ const App: React.FC = () => {
   const [numPages, setNumPages] = useState<number | null>(null); // State for total pages
   const [currentPage, setCurrentPage] = useState<number>(1); // State for current page
   const fileInputRef = useRef<HTMLInputElement>(null); // Ref for the hidden file input
+  const viewerContainerRef = useRef<HTMLDivElement>(null); // Ref for the PDF viewer container
+  const [containerWidth, setContainerWidth] = useState<number>(0); // State for container width
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -45,6 +47,45 @@ const App: React.FC = () => {
       setCurrentPage(1);
     }
   }, [file]); // Only depend on file changes
+
+  // useEffect for measuring and tracking container width
+  useEffect(() => {
+    const container = viewerContainerRef.current;
+    if (!container) return; // Exit if ref not attached yet
+
+    console.log('Container reference obtained:', container);
+
+    const resizeObserver = new ResizeObserver(entries => {
+      // Observe size changes
+      for (let entry of entries) {
+        if (entry.contentRect) {
+          // Update state with the container's width
+          const newWidth = entry.contentRect.width;
+          console.log('ResizeObserver - Measured Width:', newWidth);
+          console.log('ResizeObserver - Container Element:', entry.target);
+          setContainerWidth(newWidth);
+        }
+      }
+    });
+
+    // Measure initial width
+    const initialWidth = container.clientWidth;
+    console.log('Initial Container Width:', initialWidth);
+    console.log('Container offsetWidth:', container.offsetWidth);
+    console.log('Container scrollWidth:', container.scrollWidth);
+    console.log('Container getBoundingClientRect():', container.getBoundingClientRect());
+    setContainerWidth(initialWidth);
+
+    // Start observing
+    resizeObserver.observe(container);
+    console.log('ResizeObserver started observing container');
+
+    // Cleanup function on component unmount
+    return () => {
+      resizeObserver.unobserve(container);
+      console.log('ResizeObserver stopped observing container');
+    };
+  }, []); // Empty dependency array means run once on mount
 
   return (
     <div className="app-container">
@@ -116,7 +157,7 @@ const App: React.FC = () => {
               <h3>Drag & Drop PDF here or Click to Upload</h3>
             </div>
           ) : (
-            <div className="pdf-viewer-container"> {/* Outer scrollable container */}
+            <div className="pdf-viewer-container" ref={viewerContainerRef}> {/* Added ref here */}
               <Document
                 file={file} // Pass the selected file object
                 onLoadSuccess={onDocumentLoadSuccess} // Call handler on load
@@ -128,9 +169,10 @@ const App: React.FC = () => {
                   <Page
                     key={`page_${index + 1}`}
                     pageNumber={index + 1}
-                    width={900}
+                    // Conditionally pass width only if calculated
+                    width={containerWidth > 0 ? containerWidth : undefined}
                     renderAnnotationLayer={false} // Keep things simple for now
-                    renderTextLayer={false}       // Keep things simple for now
+                    renderTextLayer={true}       // Enable text layer for selection
                   />
                 ))}
               </Document>

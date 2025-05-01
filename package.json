@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "copy-pdfworker": "cp node_modules/react-pdf/node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs",
+    "copy-pdfworker": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs",
     "predev": "npm run copy-pdfworker",
     "prebuild": "npm run copy-pdfworker",
     "dev": "vite",
@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@types/pdfjs-dist": "^2.10.377",
-    "pdfjs-dist": "^5.2.133",
+    "pdfjs-dist": "4.8.69",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-pdf": "^9.2.1"
