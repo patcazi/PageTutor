@@ -128,9 +128,7 @@ const App: React.FC = () => {
                   <Page
                     key={`page_${index + 1}`}
                     pageNumber={index + 1}
-                    // Control page width (optional, adjust as needed)
-                    // Can use width prop or scale prop
-                    width={Math.min(window.innerWidth * 0.6, 800)} // Example: Responsive width up to 800px
+                    width={900}
                     renderAnnotationLayer={false} // Keep things simple for now
                     renderTextLayer={false}       // Keep things simple for now
                   />
