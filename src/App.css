@@ -247,22 +247,27 @@ body {
   background-color: #f8f8f8; /* Light background behind pages */
   padding: 15px 0; /* Add some vertical padding */
   box-sizing: border-box;
-  display: flex; /* Use flex to center Document */
+  display: flex; /* stack pages vertically */
   flex-direction: column;
+  align-items: center; /* center each page horizontally */
   width: 100%; /* Take full width of the container */
 }
 
 /* Styles applied by react-pdf to the Page component */
 .react-pdf__Page {
-  margin-bottom: 15px; /* Space between pages */
+  margin: 0 auto 15px;   /* center each page, keep vertical spacing */
 }
 
-/* --- React-PDF: keep page elements in sync and within the column --- */
+/* Keep canvas and text layer responsive, without stretching after render */
 .react-pdf__Page canvas,
 .react-pdf__Page .textLayer {
-  max-width: 100% !important;   /* never overflow horizontally */
-  width: auto !important;       /* use natural width up to 100% */
-  height: auto !important;
+    max-width: 100% !important; /* never overflow the column */
+    height: auto !important;    /* maintain aspect ratio */
+}
+
+/* PDF.js text spans need content-box for correct selection geometry */
+.react-pdf__Page .textLayer span {
+  box-sizing: content-box !important;
 }
 
 /* Right sidebar */
@@ -351,9 +356,4 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* PDF.js text spans need content-box for correct selection geometry */
-.react-pdf__Page .textLayer span {
-  box-sizing: content-box !important;
 }

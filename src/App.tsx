@@ -12,6 +12,7 @@ const App: React.FC = () => {
   const [file, setFile] = useState<File | null>(null); // State for the selected file
   const [numPages, setNumPages] = useState<number | null>(null); // State for total pages
   const [currentPage, setCurrentPage] = useState<number>(1); // State for current page
+  const [highlights, setHighlights] = useState<string[]>([]); // State for text highlights
   const fileInputRef = useRef<HTMLInputElement>(null); // Ref for the hidden file input
   const viewerContainerRef = useRef<HTMLDivElement>(null); // Ref for the PDF viewer container
   const [containerWidth, setContainerWidth] = useState<number>(0); // State for container width
@@ -60,7 +61,7 @@ const App: React.FC = () => {
       for (let entry of entries) {
         if (entry.contentRect) {
           // Update state with the container's width
-          const newWidth = entry.contentRect.width;
+          const newWidth = Math.min(entry.contentRect.width, 1000);  // cap at 1000px
           console.log('ResizeObserver - Measured Width:', newWidth);
           console.log('ResizeObserver - Container Element:', entry.target);
           setContainerWidth(newWidth);
@@ -69,7 +70,7 @@ const App: React.FC = () => {
     });
 
     // Measure initial width
-    const initialWidth = container.clientWidth;
+    const initialWidth = Math.min(container.clientWidth, 1000);  // cap at 1000px
     console.log('Initial Container Width:', initialWidth);
     console.log('Container offsetWidth:', container.offsetWidth);
     console.log('Container scrollWidth:', container.scrollWidth);
@@ -84,6 +85,26 @@ const App: React.FC = () => {
     return () => {
       resizeObserver.unobserve(container);
       console.log('ResizeObserver stopped observing container');
+    };
+  }, []); // Empty dependency array means run once on mount
+
+  // useEffect for capturing text selection
+  useEffect(() => {
+    // Handler for text selection
+    const handleMouseUp = () => {
+      const selected = window.getSelection()?.toString().trim();
+      if (selected) {
+        console.log("🔹 Selected text:", selected);
+        setHighlights(h => [...h, selected]);
+      }
+    };
+
+    // Add global event listener for mouseup
+    document.addEventListener('mouseup', handleMouseUp, true);
+
+    // Cleanup function on component unmount
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp, true);
     };
   }, []); // Empty dependency array means run once on mount
 
@@ -185,6 +206,11 @@ const App: React.FC = () => {
       <div className="sidebar right-sidebar">
         <div className="chat-header">Chat</div>
         <div className="chat-history">
+          {highlights.map((h, i) => (
+            <div key={i} className="chat-prompt">
+              <span className="prompt-question">{h}</span>
+            </div>
+          ))}
           {/* Chat messages will appear here */}
         </div>
         <div className="chat-input-area">
