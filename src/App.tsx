@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css'; // Recommended base CSS
 import 'react-pdf/dist/Page/TextLayer.css';    // Recommended base CSS
+import { getPdfExplanation } from "./lib/openaiClient";
 import './App.css'
 
 // Use the local worker file that will be copied to the public directory
@@ -13,6 +14,9 @@ const App: React.FC = () => {
   const [numPages, setNumPages] = useState<number | null>(null); // State for total pages
   const [currentPage, setCurrentPage] = useState<number>(1); // State for current page
   const [highlights, setHighlights] = useState<string[]>([]); // State for text highlights
+  const [aiResponses, setAiResponses] = useState<
+    { summary: string; explanation: string; quiz: string[]; loading: boolean }[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement>(null); // Ref for the hidden file input
   const viewerContainerRef = useRef<HTMLDivElement>(null); // Ref for the PDF viewer container
   const [containerWidth, setContainerWidth] = useState<number>(0); // State for container width
@@ -96,6 +100,19 @@ const App: React.FC = () => {
       if (selected) {
         console.log("🔹 Selected text:", selected);
         setHighlights(h => [...h, selected]);
+        
+        // add loading placeholder for this highlight
+        const idx = aiResponses.length;
+        setAiResponses(r => [...r, { summary: "", explanation: "", quiz: [], loading: true }]);
+
+        // call OpenAI
+        getPdfExplanation(selected).then(res =>
+          setAiResponses(r =>
+            r.map((item, i) =>
+              i === idx ? { ...res, loading: false } : item
+            )
+          )
+        );
       }
     };
 
@@ -106,7 +123,7 @@ const App: React.FC = () => {
     return () => {
       document.removeEventListener('mouseup', handleMouseUp, true);
     };
-  }, []); // Empty dependency array means run once on mount
+  }, [aiResponses.length]); // Added aiResponses.length to the dependency array
 
   return (
     <div className="app-container">
@@ -208,10 +225,24 @@ const App: React.FC = () => {
         <div className="chat-history">
           {highlights.map((h, i) => (
             <div key={i} className="chat-prompt">
-              <span className="prompt-question">{h}</span>
+              <strong>{h.length > 80 ? h.slice(0, 80) + "…" : h}</strong>
+              {aiResponses[i]?.loading ? (
+                <div>Loading AI response…</div>
+              ) : (
+                aiResponses[i] && (
+                  <div>
+                    <p><em>Summary:</em> {aiResponses[i].summary}</p>
+                    <p><em>Explanation:</em> {aiResponses[i].explanation}</p>
+                    <ol>
+                      {aiResponses[i].quiz.map((q, j) => (
+                        <li key={j}>{q}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )
+              )}
             </div>
           ))}
-          {/* Chat messages will appear here */}
         </div>
         <div className="chat-input-area">
           <input type="text" className="chat-input" placeholder="Ask any question..." />

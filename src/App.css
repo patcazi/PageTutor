@@ -265,9 +265,10 @@ body {
     height: auto !important;    /* maintain aspect ratio */
 }
 
+
 /* PDF.js text spans need content-box for correct selection geometry */
 .react-pdf__Page .textLayer span {
-  box-sizing: content-box !important;
+    box-sizing: content-box !important;
 }
 
 /* Right sidebar */
