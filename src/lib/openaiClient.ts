@@ -34,7 +34,7 @@ export async function getPdfExplanation(
     } else if (mode === "analysis") {
       userPrompt = `Return JSON {explanation} (≤150 words) for passage: """${selection}"""`;
     } else {
-      userPrompt = `Return JSON object { "quiz": [ five strings, each a multiple-choice question (A–D) ] } for passage: """${selection}"""`;
+      userPrompt = `Return JSON object { "quiz": [ { "question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "answer": "B" } ×5 ] } for passage: """${selection}"""`;
     }
     
     const response = await openai.chat.completions.create({

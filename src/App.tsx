@@ -4,6 +4,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css'; // Recommended base CSS
 import 'react-pdf/dist/Page/TextLayer.css';    // Recommended base CSS
 import { getPdfExplanation } from "./lib/openaiClient";
 import FloatingToolbar from "./components/FloatingToolbar";
+import QuizCard, { QuizItem } from "./components/QuizCard";
 import './App.css'
 
 // Use the local worker file that will be copied to the public directory
@@ -232,20 +233,22 @@ const App: React.FC = () => {
               <strong>{h.length > 80 ? h.slice(0, 80) + "…" : h}</strong>
               {aiResponses[i]?.loading ? (
                 <div>Loading {aiResponses[i].mode}…</div>
-              ) : aiResponses[i]?.mode === "summary" ? (
-                <p><em>Summary:</em> {aiResponses[i].summary}</p>
+              ) : aiResponses[i]?.mode === "quiz" ? (
+                <div>
+                  {aiResponses[i].quiz?.map((q: any, j: number) => (
+                    <QuizCard
+                      key={j}
+                      item={q as QuizItem}
+                      onComplete={correct =>
+                        console.log(`Q${j + 1}:`, correct ? "✅" : "❌")
+                      }
+                    />
+                  ))}
+                </div>
               ) : aiResponses[i]?.mode === "analysis" ? (
                 <p><em>Analysis:</em> {aiResponses[i].explanation}</p>
               ) : (
-                <ol>
-                  {aiResponses[i].quiz?.map((q: any, j: number) => (
-                    <li key={j}>
-                      {typeof q === "string"
-                        ? q
-                        : q?.question ?? JSON.stringify(q)}
-                    </li>
-                  ))}
-                </ol>
+                <p><em>Summary:</em> {aiResponses[i].summary}</p>
               )}
             </div>
           ))}
