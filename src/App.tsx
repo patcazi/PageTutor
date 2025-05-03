@@ -5,6 +5,7 @@ import 'react-pdf/dist/Page/TextLayer.css';    // Recommended base CSS
 import { getPdfExplanation } from "./lib/openaiClient";
 import FloatingToolbar from "./components/FloatingToolbar";
 import QuizCard, { QuizItem } from "./components/QuizCard";
+import QuizSession from "./components/QuizSession";
 import './App.css'
 
 // Use the local worker file that will be copied to the public directory
@@ -234,17 +235,7 @@ const App: React.FC = () => {
               {aiResponses[i]?.loading ? (
                 <div>Loading {aiResponses[i].mode}…</div>
               ) : aiResponses[i]?.mode === "quiz" ? (
-                <div>
-                  {aiResponses[i].quiz?.map((q: any, j: number) => (
-                    <QuizCard
-                      key={j}
-                      item={q as QuizItem}
-                      onComplete={correct =>
-                        console.log(`Q${j + 1}:`, correct ? "✅" : "❌")
-                      }
-                    />
-                  ))}
-                </div>
+                <QuizSession quiz={(aiResponses[i].quiz as any[]) as QuizItem[]} />
               ) : aiResponses[i]?.mode === "analysis" ? (
                 <p><em>Analysis:</em> {aiResponses[i].explanation}</p>
               ) : (
