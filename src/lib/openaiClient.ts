@@ -10,18 +10,31 @@ const openai = new OpenAI({
 /**
  * Gets an explanation for a PDF selection
  * @param selection The text selection from the PDF
- * @returns Object containing summary, explanation, and quiz questions
+ * @param mode The type of response to generate
+ * @returns Object containing the requested type of response based on mode
  */
-export async function getPdfExplanation(selection: string): Promise<{
-  summary: string;
-  explanation: string;
-  quiz: string[];
+export async function getPdfExplanation(
+  selection: string,
+  mode: "summary" | "analysis" | "quiz"
+): Promise<{
+  summary?: string;
+  explanation?: string;
+  quiz?: string[];
   error?: boolean;
 }> {
   try {
     // Validate input length
     if (selection.length > 6000) {
       throw new Error("Selection too long");
+    }
+    
+    let userPrompt = "";
+    if (mode === "summary") {
+      userPrompt = `Return JSON {summary} for passage: """${selection}"""`;
+    } else if (mode === "analysis") {
+      userPrompt = `Return JSON {explanation} (≤150 words) for passage: """${selection}"""`;
+    } else {
+      userPrompt = `Return JSON object { "quiz": [ five strings, each a multiple-choice question (A–D) ] } for passage: """${selection}"""`;
     }
     
     const response = await openai.chat.completions.create({
@@ -34,20 +47,18 @@ export async function getPdfExplanation(selection: string): Promise<{
         },
         { 
           role: "user", 
-          content: `Return JSON with keys summary, explanation, quiz (array of 3) for passage:
-"""${selection}"""` 
+          content: userPrompt
         }
       ],
     });
     
     const content = response.choices[0]?.message.content || '{}';
-    const parsedResponse = JSON.parse(content);
+    const parsed = JSON.parse(content);
     
-    return {
-      summary: parsedResponse.summary || "",
-      explanation: parsedResponse.explanation || "",
-      quiz: Array.isArray(parsedResponse.quiz) ? parsedResponse.quiz : []
-    };
+    if (mode === "summary") return { summary: parsed.summary };
+    if (mode === "analysis") return { explanation: parsed.explanation };
+    return { quiz: Array.isArray(parsed) ? parsed : (parsed.quiz || []) }; // mode === "quiz"
+    
   } catch (error) {
     console.error("Error in getPdfExplanation:", error);
     return {

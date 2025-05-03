@@ -3,6 +3,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css'; // Recommended base CSS
 import 'react-pdf/dist/Page/TextLayer.css';    // Recommended base CSS
 import { getPdfExplanation } from "./lib/openaiClient";
+import FloatingToolbar from "./components/FloatingToolbar";
 import './App.css'
 
 // Use the local worker file that will be copied to the public directory
@@ -15,8 +16,14 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1); // State for current page
   const [highlights, setHighlights] = useState<string[]>([]); // State for text highlights
   const [aiResponses, setAiResponses] = useState<
-    { summary: string; explanation: string; quiz: string[]; loading: boolean }[]
+    { summary?: string; explanation?: string; quiz?: string[]; loading: boolean; mode?: "summary" | "analysis" | "quiz" }[]
   >([]);
+  const [toolbar, setToolbar] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    selection: string;
+  }>({ visible: false, x: 0, y: 0, selection: "" });
   const fileInputRef = useRef<HTMLInputElement>(null); // Ref for the hidden file input
   const viewerContainerRef = useRef<HTMLDivElement>(null); // Ref for the PDF viewer container
   const [containerWidth, setContainerWidth] = useState<number>(0); // State for container width
@@ -98,21 +105,18 @@ const App: React.FC = () => {
     const handleMouseUp = () => {
       const selected = window.getSelection()?.toString().trim();
       if (selected) {
-        console.log("🔹 Selected text:", selected);
-        setHighlights(h => [...h, selected]);
-        
-        // add loading placeholder for this highlight
-        const idx = aiResponses.length;
-        setAiResponses(r => [...r, { summary: "", explanation: "", quiz: [], loading: true }]);
+        const range = window.getSelection()!.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
 
-        // call OpenAI
-        getPdfExplanation(selected).then(res =>
-          setAiResponses(r =>
-            r.map((item, i) =>
-              i === idx ? { ...res, loading: false } : item
-            )
-          )
-        );
+        // show toolbar just above the selection
+        setToolbar({
+          visible: true,
+          x: rect.left,
+          y: rect.top - 30,   // 30px above
+          selection: selected
+        });
+      } else {
+        setToolbar(t => ({ ...t, visible: false }));
       }
     };
 
@@ -123,7 +127,7 @@ const App: React.FC = () => {
     return () => {
       document.removeEventListener('mouseup', handleMouseUp, true);
     };
-  }, [aiResponses.length]); // Added aiResponses.length to the dependency array
+  }, []); // Empty dependency array means run once on mount
 
   return (
     <div className="app-container">
@@ -227,19 +231,21 @@ const App: React.FC = () => {
             <div key={i} className="chat-prompt">
               <strong>{h.length > 80 ? h.slice(0, 80) + "…" : h}</strong>
               {aiResponses[i]?.loading ? (
-                <div>Loading AI response…</div>
+                <div>Loading {aiResponses[i].mode}…</div>
+              ) : aiResponses[i]?.mode === "summary" ? (
+                <p><em>Summary:</em> {aiResponses[i].summary}</p>
+              ) : aiResponses[i]?.mode === "analysis" ? (
+                <p><em>Analysis:</em> {aiResponses[i].explanation}</p>
               ) : (
-                aiResponses[i] && (
-                  <div>
-                    <p><em>Summary:</em> {aiResponses[i].summary}</p>
-                    <p><em>Explanation:</em> {aiResponses[i].explanation}</p>
-                    <ol>
-                      {aiResponses[i].quiz.map((q, j) => (
-                        <li key={j}>{q}</li>
-                      ))}
-                    </ol>
-                  </div>
-                )
+                <ol>
+                  {aiResponses[i].quiz?.map((q: any, j: number) => (
+                    <li key={j}>
+                      {typeof q === "string"
+                        ? q
+                        : q?.question ?? JSON.stringify(q)}
+                    </li>
+                  ))}
+                </ol>
               )}
             </div>
           ))}
@@ -249,6 +255,39 @@ const App: React.FC = () => {
           <button className="send-btn">➤</button>
         </div>
       </div>
+
+      {toolbar.visible && (
+        <FloatingToolbar
+          x={toolbar.x}
+          y={toolbar.y}
+          onChoose={(mode: "summary" | "analysis" | "quiz") => {
+            const idx = highlights.length;            // index for this highlight
+
+            // push placeholder in highlights & responses
+            setHighlights(h => [...h, toolbar.selection]);
+            setAiResponses(r => [
+              ...r,
+              { summary: "", explanation: "", quiz: [], loading: true, mode }
+            ]);
+
+            // Cast to any to bypass the TypeScript error
+            (getPdfExplanation as any)(toolbar.selection, mode).then((res: {
+              summary?: string;
+              explanation?: string;
+              quiz?: string[];
+              error?: boolean;
+            }) =>
+              setAiResponses(r =>
+                r.map((item, i) =>
+                  i === idx ? { ...res, mode, loading: false } : item
+                )
+              )
+            );
+
+            setToolbar(t => ({ ...t, visible: false }));
+          }}
+        />
+      )}
     </div>
   )
 }
